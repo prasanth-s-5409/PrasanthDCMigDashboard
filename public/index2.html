@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migration KPI Dashboard — Zoho Projects</title>
+<style>
+:root{
+  color-scheme: light;
+  --surface-1:#ffffff; --plane:#ffffff; --hover:#f6f6f3;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e8e7e1; --axis:#c3c2b7; --border:rgba(11,11,11,0.13);
+  --track:#eeede9;
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a;
+  --series-4:#eda100; --series-5:#e87ba4; --series-6:#008300;
+  --seq-100:#cde2fb; --seq-250:#86b6ef; --seq-450:#2a78d6; --seq-600:#184f95;
+  --good:#0ca30c;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --surface-1:#212120; --plane:#161615; --hover:#2a2a28;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+    --grid:#33332f; --axis:#454541; --border:rgba(255,255,255,0.13);
+    --track:#2e2e2b;
+    --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+    --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
+    --seq-100:#0d366b; --seq-250:#184f95; --seq-450:#3987e5; --seq-600:#86b6ef;
+    --good:#0ca30c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --surface-1:#212120; --plane:#161615; --hover:#2a2a28;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#33332f; --axis:#454541; --border:rgba(255,255,255,0.13);
+  --track:#2e2e2b;
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70;
+  --series-4:#c98500; --series-5:#d55181; --series-6:#008300;
+  --seq-100:#0d366b; --seq-250:#184f95; --seq-450:#3987e5; --seq-600:#86b6ef;
+  --good:#0ca30c;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--plane); color:var(--text-primary);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 24px 72px}
+header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:28px}
+h1{font-size:22px;font-weight:640;margin:0 0 4px;letter-spacing:-0.01em}
+.sub{color:var(--text-secondary);font-size:13px;margin:0}
+button.toggle{
+  background:var(--surface-1);color:var(--text-secondary);border:1px solid var(--border);
+  border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;
+}
+button.toggle:hover{color:var(--text-primary)}
+.card{
+  background:var(--surface-1);border:1px solid var(--border);border-radius:14px;
+  padding:22px 24px;margin-bottom:18px;
+}
+.card h2{font-size:15px;font-weight:620;margin:0 0 2px;letter-spacing:-0.005em}
+.card .note{font-size:12.5px;color:var(--text-secondary);margin:0 0 18px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.card-head h2{margin-bottom:2px}
+.card-head .note{margin:0}
+
+/* hero */
+.hero{display:flex;flex-wrap:wrap;align-items:flex-end;gap:28px 44px}
+.hero .figure{font-size:60px;font-weight:660;letter-spacing:-0.03em;line-height:1}
+.hero .figlabel{font-size:13px;color:var(--text-secondary);margin-top:8px}
+.hero .split{display:flex;gap:36px;flex-wrap:wrap;padding-bottom:6px}
+.hero .split div span{display:block}
+.hero .split .v{font-size:20px;font-weight:600;letter-spacing:-0.01em}
+.hero .split .l{font-size:12px;color:var(--text-muted);margin-top:2px}
+
+/* kpi tiles */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}}
+.tile{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.tile .l{font-size:12px;color:var(--text-secondary)}
+.tile .v{font-size:27px;font-weight:640;letter-spacing:-0.02em;margin-top:6px;line-height:1.1}
+.tile .m{font-size:11.5px;color:var(--text-muted);margin-top:5px}
+
+/* bar chart rows */
+.rows{display:flex;flex-direction:column;gap:9px}
+.row{display:grid;grid-template-columns:132px 1fr auto;align-items:center;gap:12px;cursor:default}
+.row .name{font-size:12.5px;color:var(--text-secondary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track{position:relative;height:20px;background:var(--track);border-radius:0 4px 4px 0}
+.bar{height:20px;background:var(--series-1);border-radius:0 4px 4px 0;min-width:2px;transition:opacity .12s}
+.row:hover .bar,.row:focus-visible .bar{opacity:.82}
+.row:focus-visible{outline:2px solid var(--series-1);outline-offset:3px;border-radius:4px}
+.row .val{font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text-primary);min-width:74px;text-align:right}
+.row .pctv{font-size:11.5px;color:var(--text-muted);font-variant-numeric:tabular-nums;min-width:46px;text-align:right}
+.axisline{height:1px;background:var(--axis);margin:14px 0 6px;margin-left:144px}
+.ticks{display:flex;justify-content:space-between;margin-left:144px;font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums}
+
+/* stacked */
+.strow{display:grid;grid-template-columns:132px 1fr auto;align-items:center;gap:12px;margin-bottom:9px}
+.stack{display:flex;height:22px;border-radius:4px;overflow:visible}
+.seg{height:22px;position:relative;display:flex;align-items:center;justify-content:center;
+     font-size:11px;font-weight:600;overflow:hidden;cursor:default}
+.seg+.seg{margin-left:2px}
+.stack .seg:first-child{border-radius:4px 0 0 4px}
+.stack .seg:last-child{border-radius:0 4px 4px 0}
+.seg:hover{filter:brightness(1.07)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:18px}
+.legend span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary)}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* table */
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.filters input,.filters select{
+  background:var(--hover);color:var(--text-primary);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;font:inherit;font-size:13px;
+}
+.filters input{min-width:220px}
+.filters .count{font-size:12px;color:var(--text-muted);margin-left:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;font-weight:580;font-size:11.5px;letter-spacing:.03em;text-transform:uppercase;
+  color:var(--text-muted);padding:8px 10px;border-bottom:1px solid var(--axis);cursor:pointer;user-select:none;white-space:nowrap;
+}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
+th:hover{color:var(--text-primary)}
+th .ar{opacity:.55;font-size:10px}
+td{padding:8px 10px;border-bottom:1px solid var(--grid);color:var(--text-secondary)}
+td.ent{color:var(--text-primary);font-weight:500}
+tbody tr:hover td{background:var(--hover)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+.chip i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:none}
+.mini{display:inline-block;height:6px;border-radius:0 3px 3px 0;background:var(--series-1);min-width:2px;vertical-align:middle}
+.tblwrap{max-height:520px;overflow:auto;border:1px solid var(--border);border-radius:10px}
+.tblwrap thead th{position:sticky;top:0;background:var(--surface-1);z-index:2}
+
+/* tooltip */
+#tip{
+  position:fixed;pointer-events:none;opacity:0;transition:opacity .1s;z-index:99;
+  background:var(--surface-1);border:1px solid var(--border);border-radius:9px;
+  padding:9px 12px;font-size:12.5px;color:var(--text-primary);
+  box-shadow:0 6px 20px rgba(0,0,0,.14);max-width:280px;
+}
+#tip b{font-weight:620}
+#tip .r{color:var(--text-secondary);font-size:12px;margin-top:3px;font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px}
+.grid2 .card{margin-bottom:0}
+details.tv{margin-top:18px}
+details.tv summary{font-size:12.5px;color:var(--text-secondary);cursor:pointer;padding:4px 0}
+details.tv summary:hover{color:var(--text-primary)}
+details.tv table{margin-top:10px}
+footer{color:var(--text-muted);font-size:12px;margin-top:26px;line-height:1.7}
+@media (max-width:640px){
+  .row,.strow{grid-template-columns:100px 1fr auto}
+  .axisline,.ticks{margin-left:112px}
+  .hero .figure{font-size:44px}
+}
+</style>
+</head>
+<body>
+<div id="tip"></div>
+<div class="wrap">
+<header class="top">
+  <div>
+    <h1>Migration KPI Dashboard</h1>
+    <p class="sub">Zoho Projects &amp; Bug Tracker — record volumes to migrate, across 80 entity types.</p>
+  </div>
+  <button class="toggle" id="themeBtn" type="button">Dark mode</button>
+</header>
+
+<section class="card">
+  <div class="hero">
+    <div>
+      <div class="figure" id="heroFig">—</div>
+      <div class="figlabel">Total records in scope</div>
+    </div>
+    <div class="split">
+      <div><span class="v" id="hEnt">—</span><span class="l">Entity types</span></div>
+      <div><span class="v" id="hMod">—</span><span class="l">Modules</span></div>
+      <div><span class="v" id="hTop">—</span><span class="l">In the top 5 entities</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="kpis" id="kpis"></div>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Records by module</h2>
+      <p class="note">Where the migration weight actually sits. One bar per functional module, linear scale.</p>
+    </div>
+  </div>
+  <div class="rows" id="modChart"></div>
+  <div class="axisline"></div>
+  <div class="ticks" id="modTicks"></div>
+  <details class="tv"><summary>Table view — records by module</summary><div id="modTable"></div></details>
+</section>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>What kind of records they are</h2>
+      <p class="note">Each module as 100%. Comments and followers are derived volume — they migrate with their parent but dominate the row count.</p>
+    </div>
+  </div>
+  <div class="legend" id="kindLegend"></div>
+  <div id="kindChart"></div>
+  <details class="tv"><summary>Table view — record type totals</summary><div id="kindTable"></div></details>
+</section>
+
+<div class="grid2">
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>Top 15 entities by volume</h2>
+        <p class="note">Ranked share of the 21.4M total.</p>
+      </div>
+    </div>
+    <div class="rows" id="topChart"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>Attachment payload</h2>
+        <p class="note">File count vs. bytes — the two do not track each other.</p>
+      </div>
+    </div>
+    <p class="note" style="margin:0 0 10px;color:var(--text-muted);font-size:11.5px;letter-spacing:.03em;text-transform:uppercase">Storage volume</p>
+    <div class="rows" id="attChart"></div>
+    <div class="axisline"></div>
+    <div class="ticks" id="attTicks"></div>
+    <p class="note" style="margin:22px 0 10px;color:var(--text-muted);font-size:11.5px;letter-spacing:.03em;text-transform:uppercase">File count</p>
+    <div class="rows" id="attCountChart"></div>
+    <div class="axisline"></div>
+    <div class="ticks" id="attCountTicks"></div>
+    <p class="note" style="margin-top:18px" id="attNote"></p>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <div>
+      <h2>Entity explorer</h2>
+      <p class="note">All 80 entities. Search, filter by module, sort any column.</p>
+    </div>
+  </div>
+  <div class="filters">
+    <input type="search" id="q" placeholder="Search entity…" aria-label="Search entity">
+    <select id="fMod" aria-label="Filter by module"></select>
+    <select id="fKind" aria-label="Filter by record type"></select>
+    <span class="count" id="cnt"></span>
+  </div>
+  <div class="tblwrap">
+    <table id="tbl">
+      <thead><tr>
+        <th data-k="name">Entity <span class="ar"></span></th>
+        <th data-k="module">Module <span class="ar"></span></th>
+        <th data-k="kind">Record type <span class="ar"></span></th>
+        <th data-k="count" class="num">Records <span class="ar"></span></th>
+        <th data-k="pct" class="num">% of total <span class="ar"></span></th>
+        <th style="width:120px">Share</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Source: <code>zohocorp stats stats_sum.csv</code> — 80 entity rows plus 4 attachment-size rows.
+  Attachment storage totals 3,173,272,987,367 bytes across three buckets; <code>FileAttachments</code> is empty (0 files, 0 bytes).
+  Modules and record types are derived by entity-name convention, not present in the source file.
+</footer>
+</div>
+<script>
+const DATA = {"entities":[{"name":"Profile","count":25172,"module":"Users & access","kind":"Config & views","pct":0.1179},{"name":"Role","count":5823,"module":"Users & access","kind":"Config & views","pct":0.0273},{"name":"PortalUser","count":52392,"module":"Users & access","kind":"Core records","pct":0.2454},{"name":"UserDetails","count":163507,"module":"Users & access","kind":"Core records","pct":0.7658},{"name":"ClientCompany","count":12491,"module":"Users & access","kind":"Core records","pct":0.0585},{"name":"ClientUser","count":1136,"module":"Users & access","kind":"Core records","pct":0.0053},{"name":"UserFollow","count":4032,"module":"Users & access","kind":"Followers","pct":0.0189},{"name":"UserTeam","count":2907,"module":"Users & access","kind":"Core records","pct":0.0136},{"name":"ProjLayout","count":1664,"module":"Projects","kind":"Config & views","pct":0.0078},{"name":"MileLayout","count":2348,"module":"Milestones","kind":"Config & views","pct":0.011},{"name":"TaskLayout","count":7215,"module":"Tasks","kind":"Config & views","pct":0.0338},{"name":"TimeLayout","count":3448,"module":"Time tracking","kind":"Config & views","pct":0.0161},{"name":"BugLayout","count":26168,"module":"Bugs / Issues","kind":"Config & views","pct":0.1226},{"name":"ProjCustomField","count":61931,"module":"Projects","kind":"Config & views","pct":0.29},{"name":"MileCustomField","count":42133,"module":"Milestones","kind":"Config & views","pct":0.1973},{"name":"TaskCustomField","count":93155,"module":"Tasks","kind":"Config & views","pct":0.4363},{"name":"TimeCustomField","count":16738,"module":"Time tracking","kind":"Config & views","pct":0.0784},{"name":"BugCustomField","count":24735,"module":"Bugs / Issues","kind":"Config & views","pct":0.1158},{"name":"ProjStatus","count":10619,"module":"Projects","kind":"Config & views","pct":0.0497},{"name":"MileStatus","count":7694,"module":"Milestones","kind":"Config & views","pct":0.036},{"name":"TaskStatus","count":17689,"module":"Tasks","kind":"Config & views","pct":0.0828},{"name":"BugStatus","count":10079,"module":"Bugs / Issues","kind":"Config & views","pct":0.0472},{"name":"Project","count":67649,"module":"Projects","kind":"Core records","pct":0.3168},{"name":"ProjectGroup","count":3241,"module":"Projects","kind":"Core records","pct":0.0152},{"name":"ProjectComment","count":10247,"module":"Projects","kind":"Comments","pct":0.048},{"name":"ProjCustomview","count":11076,"module":"Projects","kind":"Config & views","pct":0.0519},{"name":"ProjWorkFlow","count":2255,"module":"Projects","kind":"Automation","pct":0.0106},{"name":"ProjEmailTemplete","count":99,"module":"Projects","kind":"Automation","pct":0.0005},{"name":"ProjEmailAlert","count":135,"module":"Projects","kind":"Automation","pct":0.0006},{"name":"ProjWebHook","count":42,"module":"Projects","kind":"Automation","pct":0.0002},{"name":"ProjCustomFunction","count":677,"module":"Projects","kind":"Automation","pct":0.0032},{"name":"Milestones","count":156829,"module":"Milestones","kind":"Core records","pct":0.7345},{"name":"MilestoneComments","count":59580,"module":"Milestones","kind":"Comments","pct":0.279},{"name":"MilestoneFollow","count":608,"module":"Milestones","kind":"Followers","pct":0.0028},{"name":"MileCustomview","count":10260,"module":"Milestones","kind":"Config & views","pct":0.0481},{"name":"Tasklist","count":347246,"module":"Tasks","kind":"Core records","pct":1.6263},{"name":"TasklistComment","count":6157,"module":"Tasks","kind":"Comments","pct":0.0288},{"name":"TasklistFollow","count":1828,"module":"Tasks","kind":"Followers","pct":0.0086},{"name":"Task","count":3162598,"module":"Tasks","kind":"Core records","pct":14.8115},{"name":"TaskComment","count":904836,"module":"Tasks","kind":"Comments","pct":4.2377},{"name":"TasksDependency","count":248853,"module":"Tasks","kind":"Core records","pct":1.1655},{"name":"TaskTemplate","count":3019,"module":"Tasks","kind":"Config & views","pct":0.0141},{"name":"TaskFollowers","count":281683,"module":"Tasks","kind":"Followers","pct":1.3192},{"name":"TaskTimer","count":31503,"module":"Tasks","kind":"Core records","pct":0.1475},{"name":"BaseLine","count":1093,"module":"Projects","kind":"Core records","pct":0.0051},{"name":"TaskBugMapping","count":12550,"module":"Tasks","kind":"Core records","pct":0.0588},{"name":"TaskForumMapping","count":1310,"module":"Tasks","kind":"Core records","pct":0.0061},{"name":"TaskCustomview","count":28734,"module":"Tasks","kind":"Config & views","pct":0.1346},{"name":"TaskBluePrint","count":1547,"module":"Tasks","kind":"Automation","pct":0.0072},{"name":"TaskWorkFlow","count":4175,"module":"Tasks","kind":"Automation","pct":0.0196},{"name":"TaskEmailTemplete","count":658,"module":"Tasks","kind":"Automation","pct":0.0031},{"name":"TaskEmailAlert","count":1783,"module":"Tasks","kind":"Automation","pct":0.0084},{"name":"TaskWebHook","count":432,"module":"Tasks","kind":"Automation","pct":0.002},{"name":"TaskCustomFunction","count":1863,"module":"Tasks","kind":"Automation","pct":0.0087},{"name":"Bug","count":7722459,"module":"Bugs / Issues","kind":"Core records","pct":36.1669},{"name":"BugComment","count":3828552,"module":"Bugs / Issues","kind":"Comments","pct":17.9304},{"name":"BugResolution","count":41748,"module":"Bugs / Issues","kind":"Config & views","pct":0.1955},{"name":"BugLink","count":48073,"module":"Bugs / Issues","kind":"Core records","pct":0.2251},{"name":"BugWebFormFields","count":737,"module":"Bugs / Issues","kind":"Config & views","pct":0.0035},{"name":"BugFollowers","count":861858,"module":"Bugs / Issues","kind":"Followers","pct":4.0364},{"name":"BugTimer","count":7982,"module":"Bugs / Issues","kind":"Core records","pct":0.0374},{"name":"BugCustomview","count":59474,"module":"Bugs / Issues","kind":"Config & views","pct":0.2785},{"name":"BugBusinessRule","count":5731,"module":"Bugs / Issues","kind":"Automation","pct":0.0268},{"name":"BugEmailTemplete","count":727,"module":"Bugs / Issues","kind":"Automation","pct":0.0034},{"name":"BugWebHook","count":1487,"module":"Bugs / Issues","kind":"Automation","pct":0.007},{"name":"BugCustomFunction","count":830,"module":"Bugs / Issues","kind":"Automation","pct":0.0039},{"name":"BugSLA","count":987,"module":"Bugs / Issues","kind":"Automation","pct":0.0046},{"name":"ForumCategory","count":86938,"module":"Forums","kind":"Core records","pct":0.4072},{"name":"Forum","count":36343,"module":"Forums","kind":"Core records","pct":0.1702},{"name":"ForumComment","count":63692,"module":"Forums","kind":"Comments","pct":0.2983},{"name":"ForumFollow","count":62392,"module":"Forums","kind":"Followers","pct":0.2922},{"name":"Status","count":119923,"module":"Activity feed","kind":"Core records","pct":0.5616},{"name":"StatusComment","count":190340,"module":"Activity feed","kind":"Comments","pct":0.8914},{"name":"LogHours","count":256065,"module":"Time tracking","kind":"Core records","pct":1.1992},{"name":"TimeCustomview","count":14866,"module":"Time tracking","kind":"Config & views","pct":0.0696},{"name":"Tag","count":52574,"module":"Tags","kind":"Config & views","pct":0.2462},{"name":"Attachments","count":1284935,"module":"Attachments","kind":"Attachments","pct":6.0178},{"name":"OrgAttachments","count":615314,"module":"Attachments","kind":"Attachments","pct":2.8817},{"name":"ProjAttachments","count":30604,"module":"Attachments","kind":"Attachments","pct":0.1433},{"name":"FileAttachments","count":0,"module":"Attachments","kind":"Attachments","pct":0.0}],"total":21352273,"sizes":{"Attachments":3059200082879,"OrgAttachments":93871078876,"ProjAttachments":20201825612,"FileAttachments":0}};
+/* ---------- helpers ---------- */
+const fmt = n => n.toLocaleString('en-US');
+const compact = n => {
+  if (n >= 1e9) return (n/1e9).toFixed(2).replace(/\.?0+$/,'') + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2).replace(/\.?0+$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(n>=1e5?0:1).replace(/\.0$/,'') + 'K';
+  return String(n);
+};
+const bytes = b => {
+  if (b >= 1e12) return (b/1e12).toFixed(2) + ' TB';
+  if (b >= 1e9)  return (b/1e9).toFixed(1) + ' GB';
+  if (b >= 1e6)  return (b/1e6).toFixed(1) + ' MB';
+  if (b >= 1e3)  return (b/1e3).toFixed(0) + ' KB';
+  return b + ' B';
+};
+// returns ticks 0..top where top >= max, aiming for 4–5 intervals
+const axisTicks = max => {
+  const mag = Math.pow(10, Math.floor(Math.log10(max)));
+  let step = mag;
+  for (const s of [0.2,0.25,0.5,1,2,2.5,5,10]) {
+    const n = Math.ceil(max / (s*mag));
+    if (n >= 3 && n <= 5) { step = s*mag; break; }
+  }
+  const n = Math.ceil(max / step);
+  const out = []; for (let i = 0; i <= n; i++) out.push(+(i*step).toFixed(6));
+  return out;
+};
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById('tip');
+function bindTip(el, html){
+  const show = e => {
+    tip.innerHTML = html; tip.style.opacity = 1;
+    const r = tip.getBoundingClientRect();
+    let x = (e.clientX !== undefined ? e.clientX : el.getBoundingClientRect().left) + 14;
+    let y = (e.clientY !== undefined ? e.clientY : el.getBoundingClientRect().top) + 16;
+    if (x + r.width > innerWidth - 12) x = innerWidth - r.width - 12;
+    if (y + r.height > innerHeight - 12) y = y - r.height - 28;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  };
+  el.addEventListener('mousemove', show);
+  el.addEventListener('mouseenter', show);
+  el.addEventListener('focus', show);
+  el.addEventListener('mouseleave', () => tip.style.opacity = 0);
+  el.addEventListener('blur', () => tip.style.opacity = 0);
+}
+
+/* ---------- data prep ---------- */
+const E = DATA.entities, TOTAL = DATA.total, SZ = DATA.sizes;
+const KINDS = ['Core records','Comments','Followers','Attachments','Config & views','Automation'];
+const KVAR  = {'Core records':'--series-1','Comments':'--series-2','Followers':'--series-3',
+               'Attachments':'--series-4','Config & views':'--series-5','Automation':'--series-6'};
+// ink chosen per fill luminance (measured contrast, both modes) — labels inside fills
+const KINK  = {'Core records':'#0b0b0b','Comments':'#0b0b0b','Followers':'#0b0b0b',
+               'Attachments':'#0b0b0b','Config & views':'#0b0b0b','Automation':'#ffffff'};
+
+const byModule = {}, byKind = {};
+E.forEach(d => {
+  (byModule[d.module] = byModule[d.module] || {name:d.module,count:0,n:0,kinds:{}});
+  byModule[d.module].count += d.count; byModule[d.module].n++;
+  byModule[d.module].kinds[d.kind] = (byModule[d.module].kinds[d.kind]||0) + d.count;
+  byKind[d.kind] = (byKind[d.kind]||0) + d.count;
+});
+const mods = Object.values(byModule).sort((a,b) => b.count - a.count);
+const ranked = [...E].sort((a,b) => b.count - a.count);
+const top5 = ranked.slice(0,5).reduce((s,d) => s + d.count, 0);
+const attCount = E.filter(d => d.kind === 'Attachments').reduce((s,d) => s + d.count, 0);
+const attBytes = Object.values(SZ).reduce((s,v) => s + v, 0);
+
+/* ---------- hero + KPI tiles ---------- */
+document.getElementById('heroFig').textContent = fmt(TOTAL);
+document.getElementById('hEnt').textContent = E.length;
+document.getElementById('hMod').textContent = mods.length;
+document.getElementById('hTop').textContent = (top5/TOTAL*100).toFixed(1) + '%';
+
+const tiles = [
+  ['Largest entity', compact(ranked[0].count), ranked[0].name + ' — ' + (ranked[0].pct).toFixed(1) + '% of all records'],
+  ['Heaviest module', compact(mods[0].count), mods[0].name + ' — ' + (mods[0].count/TOTAL*100).toFixed(1) + '% across ' + mods[0].n + ' entities'],
+  ['Attachment files', compact(attCount), 'Across 3 storage buckets'],
+  ['Storage to move', bytes(attBytes), 'Avg file ' + bytes(attBytes/attCount)],
+  ['Derived volume', ((byKind['Comments']+byKind['Followers'])/TOTAL*100).toFixed(0) + '%', 'Comments + followers = ' + compact(byKind['Comments']+byKind['Followers']) + ' rows'],
+  ['Config &amp; automation', compact(byKind['Config & views'] + byKind['Automation']), 'Low volume, high migration risk']
+];
+document.getElementById('kpis').innerHTML = tiles.map(t =>
+  `<div class="tile"><div class="l">${t[0]}</div><div class="v">${t[1]}</div><div class="m">${t[2]}</div></div>`
+).join('');
+
+/* ---------- chart 1: records by module (single hue) ---------- */
+(function(){
+  const max = Math.max(...mods.map(m => m.count));
+  const ticks = axisTicks(max);
+  const scaleMax = ticks[ticks.length-1];
+  const host = document.getElementById('modChart');
+  mods.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'row'; row.tabIndex = 0;
+    row.innerHTML = `<div class="name" title="${m.name}">${m.name}</div>
+      <div class="track"><div class="bar" style="width:${(m.count/scaleMax*100).toFixed(3)}%"></div></div>
+      <div style="display:flex;gap:10px"><div class="val">${fmt(m.count)}</div><div class="pctv">${(m.count/TOTAL*100).toFixed(1)}%</div></div>`;
+    const kk = Object.entries(m.kinds).sort((a,b)=>b[1]-a[1])
+      .map(([k,v]) => `<div class="r">${k} · ${fmt(v)}</div>`).join('');
+    bindTip(row, `<b>${m.name}</b><div class="r">${fmt(m.count)} records · ${(m.count/TOTAL*100).toFixed(1)}% of total</div><div class="r">${m.n} entity type${m.n>1?'s':''}</div><div style="height:6px"></div>${kk}`);
+    host.appendChild(row);
+  });
+  document.getElementById('modTicks').innerHTML = ticks.map(t => `<span>${compact(t)}</span>`).join('');
+  document.getElementById('modTable').innerHTML = `<table><thead><tr><th>Module</th><th class="num">Entities</th><th class="num">Records</th><th class="num">% of total</th></tr></thead><tbody>` +
+    mods.map(m => `<tr><td class="ent">${m.name}</td><td class="num">${m.n}</td><td class="num">${fmt(m.count)}</td><td class="num">${(m.count/TOTAL*100).toFixed(2)}%</td></tr>`).join('') +
+    `<tr><td class="ent">All modules</td><td class="num">${E.length}</td><td class="num">${fmt(TOTAL)}</td><td class="num">100.00%</td></tr></tbody></table>`;
+})();
+
+/* ---------- chart 2: 100% stacked composition by record type ---------- */
+(function(){
+  document.getElementById('kindLegend').innerHTML = KINDS.map(k =>
+    `<span><i style="background:var(${KVAR[k]})"></i>${k} · ${fmt(byKind[k]||0)}</span>`).join('');
+  const host = document.getElementById('kindChart');
+  mods.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'strow';
+    const segs = KINDS.filter(k => m.kinds[k]).map(k => {
+      const share = m.kinds[k] / m.count * 100;
+      const label = share >= 11 ? Math.round(share) + '%' : '';
+      return `<div class="seg" tabindex="0" data-k="${k}" data-m="${m.name}" data-v="${m.kinds[k]}" data-s="${share.toFixed(1)}"
+               style="width:${share.toFixed(3)}%;background:var(${KVAR[k]});color:${KINK[k]}">${label}</div>`;
+    }).join('');
+    row.innerHTML = `<div class="name" title="${m.name}">${m.name}</div><div class="stack">${segs}</div><div class="val">${compact(m.count)}</div>`;
+    host.appendChild(row);
+  });
+  host.querySelectorAll('.seg').forEach(s => bindTip(s,
+    `<b>${s.dataset.m} — ${s.dataset.k}</b><div class="r">${fmt(+s.dataset.v)} records</div><div class="r">${s.dataset.s}% of the module</div>`));
+  const kt = KINDS.map(k => [k, byKind[k]||0]).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('kindTable').innerHTML = `<table><thead><tr><th>Record type</th><th class="num">Records</th><th class="num">% of total</th></tr></thead><tbody>` +
+    kt.map(([k,v]) => `<tr><td class="ent">${k}</td><td class="num">${fmt(v)}</td><td class="num">${(v/TOTAL*100).toFixed(2)}%</td></tr>`).join('') + `</tbody></table>`;
+})();
+
+/* ---------- chart 3: top 15 entities ---------- */
+(function(){
+  const top = ranked.slice(0,15);
+  const scaleMax = top[0].count;
+  const host = document.getElementById('topChart');
+  top.forEach(d => {
+    const row = document.createElement('div');
+    row.className = 'row'; row.tabIndex = 0;
+    row.innerHTML = `<div class="name" title="${d.name}">${d.name}</div>
+      <div class="track"><div class="bar" style="width:${(d.count/scaleMax*100).toFixed(3)}%"></div></div>
+      <div style="display:flex;gap:10px"><div class="val">${fmt(d.count)}</div><div class="pctv">${d.pct.toFixed(1)}%</div></div>`;
+    bindTip(row, `<b>${d.name}</b><div class="r">${fmt(d.count)} records · ${d.pct.toFixed(2)}% of total</div><div class="r">${d.module} · ${d.kind}</div>`);
+    host.appendChild(row);
+  });
+})();
+
+/* ---------- chart 4: attachments ---------- */
+(function(){
+  const buckets = [
+    ['Attachments','Record attachments'],
+    ['OrgAttachments','Org-level files'],
+    ['ProjAttachments','Project docs'],
+    ['FileAttachments','Files module']
+  ].map(([k,label]) => ({
+    label, bytes: SZ[k]||0,
+    count: (E.find(d => d.name === k) || {count:0}).count
+  }));
+  function draw(hostId, tickId, get, fmtv){
+    const max = Math.max(...buckets.map(get));
+    const ticks = axisTicks(max), scaleMax = ticks[ticks.length-1];
+    const host = document.getElementById(hostId);
+    buckets.forEach(b => {
+      const row = document.createElement('div');
+      row.className = 'row'; row.tabIndex = 0;
+      row.innerHTML = `<div class="name" title="${b.label}">${b.label}</div>
+        <div class="track"><div class="bar" style="width:${(get(b)/scaleMax*100).toFixed(3)}%"></div></div>
+        <div class="val">${fmtv(get(b))}</div>`;
+      bindTip(row, `<b>${b.label}</b><div class="r">${bytes(b.bytes)} · ${fmt(b.bytes)} bytes</div><div class="r">${fmt(b.count)} files</div>` +
+        (b.count ? `<div class="r">Avg ${bytes(b.bytes/b.count)} per file</div>` : `<div class="r">Empty — nothing to migrate</div>`));
+      host.appendChild(row);
+    });
+    document.getElementById(tickId).innerHTML = ticks.map(t => `<span>${fmtv(t)}</span>`).join('');
+  }
+  draw('attChart','attTicks', b => b.bytes, bytes);
+  draw('attCountChart','attCountTicks', b => b.count, v => v ? compact(v) : '0');
+  document.getElementById('attNote').innerHTML =
+    `Record attachments are <b>96.4%</b> of the bytes but only 66.5% of the files — average 2.38&nbsp;MB each, versus 153&nbsp;KB for org-level files. Bulk-transfer sizing should follow the bytes, not the row count.`;
+})();
+
+/* ---------- entity explorer table ---------- */
+(function(){
+  const tbody = document.querySelector('#tbl tbody');
+  const q = document.getElementById('q'), fMod = document.getElementById('fMod'), fKind = document.getElementById('fKind');
+  fMod.innerHTML = '<option value="">All modules</option>' + mods.map(m => `<option>${m.name}</option>`).join('');
+  fKind.innerHTML = '<option value="">All record types</option>' + KINDS.map(k => `<option>${k}</option>`).join('');
+  let sortKey = 'count', dir = -1;
+  const maxC = ranked[0].count;
+  function render(){
+    const term = q.value.trim().toLowerCase();
+    let rows = E.filter(d =>
+      (!term || d.name.toLowerCase().includes(term)) &&
+      (!fMod.value || d.module === fMod.value) &&
+      (!fKind.value || d.kind === fKind.value));
+    rows.sort((a,b) => {
+      const x = a[sortKey], y = b[sortKey];
+      return (typeof x === 'string' ? x.localeCompare(y) : x - y) * dir;
+    });
+    tbody.innerHTML = rows.map(d => `<tr>
+      <td class="ent">${d.name}</td>
+      <td>${d.module}</td>
+      <td><span class="chip"><i style="background:var(${KVAR[d.kind]})"></i>${d.kind}</span></td>
+      <td class="num">${fmt(d.count)}</td>
+      <td class="num">${d.pct < 0.01 ? '<0.01' : d.pct.toFixed(2)}%</td>
+      <td><span class="mini" style="width:${Math.max(2, d.count/maxC*100).toFixed(2)}%"></span></td></tr>`).join('');
+    document.getElementById('cnt').textContent =
+      rows.length + ' of ' + E.length + ' entities · ' + fmt(rows.reduce((s,d) => s + d.count, 0)) + ' records';
+    document.querySelectorAll('#tbl th[data-k]').forEach(th =>
+      th.querySelector('.ar').textContent = th.dataset.k === sortKey ? (dir < 0 ? '▼' : '▲') : '');
+  }
+  document.querySelectorAll('#tbl th[data-k]').forEach(th => th.addEventListener('click', () => {
+    if (sortKey === th.dataset.k) dir = -dir;
+    else { sortKey = th.dataset.k; dir = (sortKey === 'name' || sortKey === 'module' || sortKey === 'kind') ? 1 : -1; }
+    render();
+  }));
+  [q, fMod, fKind].forEach(el => el.addEventListener('input', render));
+  render();
+})();
+
+/* ---------- theme toggle ---------- */
+(function(){
+  const btn = document.getElementById('themeBtn');
+  const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  let dark = prefersDark;
+  const apply = () => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    btn.textContent = dark ? 'Light mode' : 'Dark mode';
+  };
+  apply();
+  btn.addEventListener('click', () => { dark = !dark; apply(); });
+})();
+</script>
+</body></html>

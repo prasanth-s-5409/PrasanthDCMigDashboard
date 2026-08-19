@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZohoCorp - DCMigration KPI DashBoard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-hover: #273548;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --accent4: #fb923c;
+    --accent5: #f472b6;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --border: #334155;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .header h1 span { color: var(--accent); }
+  .header .date { color: var(--text-dim); font-size: 14px; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 30px 40px; }
+
+  /* Top KPI Cards */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .kpi-card .kpi-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 14px;
+  }
+  .kpi-card .kpi-label { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-card .kpi-value { font-size: 28px; font-weight: 700; }
+  .kpi-card .kpi-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  .bg-blue { background: rgba(56, 189, 248, 0.12); color: #38bdf8; }
+  .bg-purple { background: rgba(167, 139, 250, 0.12); color: #a78bfa; }
+  .bg-green { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+  .bg-orange { background: rgba(251, 146, 60, 0.12); color: #fb923c; }
+  .bg-pink { background: rgba(244, 114, 182, 0.12); color: #f472b6; }
+  .bg-teal { background: rgba(45, 212, 191, 0.12); color: #2dd4bf; }
+
+  .val-blue { color: #38bdf8; }
+  .val-purple { color: #a78bfa; }
+  .val-green { color: #34d399; }
+  .val-orange { color: #fb923c; }
+  .val-pink { color: #f472b6; }
+  .val-teal { color: #2dd4bf; }
+
+  /* Section titles */
+  .section-title {
+    font-size: 18px; font-weight: 600; margin: 32px 0 16px;
+    padding-left: 14px;
+    border-left: 3px solid var(--accent);
+  }
+
+  /* Chart grid */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 22px;
+    margin-bottom: 30px;
+  }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .chart-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 18px; color: var(--text); }
+  .chart-container { position: relative; width: 100%; }
+  .chart-container.bar { height: 320px; }
+  .chart-container.doughnut { height: 300px; display: flex; justify-content: center; }
+
+  /* Data table */
+  .table-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 30px;
+    overflow-x: auto;
+  }
+  .table-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: var(--text-dim); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 14px; color: var(--text-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid rgba(51,65,85,0.5); font-size: 14px; }
+  tr:hover td { background: rgba(56,189,248,0.04); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+  /* Storage bar */
+  .storage-section { margin-bottom: 30px; }
+  .storage-bar-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .storage-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .storage-label { width: 160px; font-size: 13px; color: var(--text-dim); }
+  .storage-track { flex: 1; height: 28px; background: rgba(51,65,85,0.5); border-radius: 8px; overflow: hidden; position: relative; }
+  .storage-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font-size: 11px; font-weight: 600; min-width: 60px; }
+  .storage-val { width: 80px; text-align: right; font-size: 14px; font-weight: 600; }
+
+  @media (max-width: 768px) {
+    .container { padding: 16px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>ZohoCorp</span> &mdash; DCMigration KPI DashBoard</h1>
+  <div class="date">Report Date: April 8, 2026</div>
+</div>
+
+<div class="container">
+
+  <!-- TOP KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:rgba(250,204,21,0.12);color:#facc15;">&#128640;</div>
+      <div class="kpi-label">Migrated Portals</div>
+      <div class="kpi-value" style="color:#facc15;">945</div>
+      <div class="kpi-sub">Portals migrated</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-blue">&#128196;</div>
+      <div class="kpi-label">Total Projects</div>
+      <div class="kpi-value val-blue">67,649</div>
+      <div class="kpi-sub">Across all groups</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-green">&#9989;</div>
+      <div class="kpi-label">Total Tasks</div>
+      <div class="kpi-value val-green">3,162,598</div>
+      <div class="kpi-sub">In 347,246 task lists</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-pink">&#128027;</div>
+      <div class="kpi-label">Total Bugs</div>
+      <div class="kpi-value val-pink">7,722,459</div>
+      <div class="kpi-sub">3,828,552 comments</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-purple">&#127919;</div>
+      <div class="kpi-label">Milestones</div>
+      <div class="kpi-value val-purple">156,829</div>
+      <div class="kpi-sub">59,580 comments</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-orange">&#128101;</div>
+      <div class="kpi-label">Portal Users</div>
+      <div class="kpi-value val-orange">52,392</div>
+      <div class="kpi-sub">163,507 user details</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-teal">&#128206;</div>
+      <div class="kpi-label">Attachments</div>
+      <div class="kpi-value val-teal">1,284,935</div>
+      <div class="kpi-sub">~3 TB total storage</div>
+    </div>
+  </div>
+
+  <!-- WORK ITEMS BREAKDOWN -->
+  <div class="section-title">Work Items Distribution</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Core Entities Volume</h3>
+      <div class="chart-container bar"><canvas id="coreChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Engagement &amp; Collaboration</h3>
+      <div class="chart-container bar"><canvas id="engageChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- COMMENTS & FOLLOWERS -->
+  <div class="section-title">Collaboration Metrics</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Comments by Module</h3>
+      <div class="chart-container doughnut"><canvas id="commentsDonut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Followers by Module</h3>
+      <div class="chart-container doughnut"><canvas id="followersDonut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CONFIGURATION & CUSTOMIZATION -->
+  <div class="section-title">Configuration &amp; Customization</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Custom Fields by Module</h3>
+      <div class="chart-container bar"><canvas id="customFieldsChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Layouts &amp; Statuses</h3>
+      <div class="chart-container bar"><canvas id="layoutStatusChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- AUTOMATION -->
+  <div class="section-title">Automation &amp; Workflows</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Automation Rules (Project vs Task vs Bug)</h3>
+      <div class="chart-container bar"><canvas id="automationChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Forums &amp; Communication</h3>
+      <div class="chart-container doughnut"><canvas id="forumsDonut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- STORAGE -->
+  <div class="section-title">Storage Breakdown</div>
+  <div class="storage-section">
+    <div class="storage-bar-wrap">
+      <div class="storage-row">
+        <div class="storage-label">All Attachments</div>
+        <div class="storage-track"><div class="storage-fill" style="width:100%;background:linear-gradient(90deg,#38bdf8,#a78bfa);">~3 TB</div></div>
+        <div class="storage-val val-blue">1,284,935</div>
+      </div>
+      <div class="storage-row">
+        <div class="storage-label">Org Attachments</div>
+        <div class="storage-track"><div class="storage-fill" style="width:47.8%;background:linear-gradient(90deg,#34d399,#2dd4bf);">~93 GB</div></div>
+        <div class="storage-val val-green">615,314</div>
+      </div>
+      <div class="storage-row">
+        <div class="storage-label">Project Attachments</div>
+        <div class="storage-track"><div class="storage-fill" style="width:2.4%;background:linear-gradient(90deg,#fb923c,#f472b6);">~20 GB</div></div>
+        <div class="storage-val val-orange">30,604</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAILED TABLE -->
+  <div class="section-title">Full Entity Breakdown</div>
+  <div class="table-card">
+    <h3>All Entities &amp; Counts</h3>
+    <table>
+      <thead><tr><th>Category</th><th>Entity</th><th style="text-align:right">Count</th></tr></thead>
+      <tbody id="dataTable"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// Register datalabels plugin globally
+Chart.register(ChartDataLabels);
+
+// Chart defaults
+Chart.defaults.color = '#e2e8f0';
+Chart.defaults.borderColor = 'rgba(51,65,85,0.5)';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+const fmt = n => n.toLocaleString();
+const fmtShort = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : n.toString();
+
+// ── Shared datalabel configs ──
+const barDatalabelEnd = {
+  display: true,
+  anchor: 'end',
+  align: 'end',
+  color: '#e2e8f0',
+  font: { size: 11, weight: 'bold', family: "'Segoe UI', system-ui, sans-serif" },
+  formatter: v => fmt(v),
+  padding: { left: 6 }
+};
+
+const barDatalabelEndVertical = {
+  display: true,
+  anchor: 'end',
+  align: 'top',
+  color: '#e2e8f0',
+  font: { size: 10, weight: 'bold', family: "'Segoe UI', system-ui, sans-serif" },
+  formatter: v => fmt(v),
+  padding: { bottom: 4 }
+};
+
+const groupedBarDatalabel = {
+  display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+  anchor: 'end',
+  align: 'top',
+  color: '#e2e8f0',
+  font: { size: 9, weight: '600', family: "'Segoe UI', system-ui, sans-serif" },
+  formatter: v => v > 0 ? fmtShort(v) : '',
+  padding: { bottom: 2 }
+};
+
+const donutDatalabel = {
+  display: ctx => {
+    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+    return (ctx.dataset.data[ctx.dataIndex] / total) > 0.04;
+  },
+  color: '#fff',
+  font: { size: 10, weight: 'bold', family: "'Segoe UI', system-ui, sans-serif" },
+  textShadowColor: 'rgba(0,0,0,0.6)',
+  textShadowBlur: 4,
+  formatter: (v, ctx) => {
+    const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+    return (v / total * 100).toFixed(1) + '%';
+  }
+};
+
+// 1. Core Entities Bar
+new Chart(document.getElementById('coreChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Bugs', 'Tasks', 'Task Lists', 'Milestones', 'Projects', 'Log Hours'],
+    datasets: [{
+      data: [7722459, 3162598, 347246, 156829, 67649, 256065],
+      backgroundColor: ['#f472b6','#34d399','#2dd4bf','#a78bfa','#38bdf8','#fb923c'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    layout: { padding: { right: 60 } },
+    plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: barDatalabelEnd },
+    scales: { x: { ticks: { callback: v => v >= 1e6 ? (v/1e6)+'M' : v >= 1e3 ? (v/1e3)+'K' : v }, grid: { color: 'rgba(51,65,85,0.3)' } }, y: { grid: { display: false } } }
+  }
+});
+
+// 2. Engagement
+new Chart(document.getElementById('engageChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Bug Comments', 'Task Comments', 'Status Comments', 'Forum Comments', 'Milestone Comments', 'Project Comments'],
+    datasets: [{
+      data: [3828552, 904836, 190340, 63692, 59580, 10247],
+      backgroundColor: ['#f472b6','#34d399','#fb923c','#2dd4bf','#a78bfa','#38bdf8'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    indexAxis: 'y',
+    layout: { padding: { right: 60 } },
+    plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: barDatalabelEnd },
+    scales: { x: { ticks: { callback: v => v >= 1e6 ? (v/1e6)+'M' : v >= 1e3 ? (v/1e3)+'K' : v }, grid: { color: 'rgba(51,65,85,0.3)' } }, y: { grid: { display: false } } }
+  }
+});
+
+// 3. Comments Donut
+new Chart(document.getElementById('commentsDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Bug Comments', 'Task Comments', 'Status Comments', 'Forum Comments', 'Milestone Comments', 'Project Comments', 'Tasklist Comments'],
+    datasets: [{
+      data: [3828552, 904836, 190340, 63692, 59580, 10247, 6157],
+      backgroundColor: ['#f472b6','#34d399','#fb923c','#2dd4bf','#a78bfa','#38bdf8','#fbbf24'],
+      borderWidth: 2, borderColor: '#1e293b', hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: {
+      legend: { position: 'right', labels: { padding: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 },
+        generateLabels: chart => chart.data.labels.map((l, i) => {
+          const v = chart.data.datasets[0].data[i];
+          const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+          return { text: l + '  ' + fmt(v) + '  (' + (v/total*100).toFixed(1) + '%)', fillStyle: chart.data.datasets[0].backgroundColor[i], fontColor: '#e2e8f0', strokeStyle: 'transparent', pointStyle: 'circle', hidden: false, index: i };
+        })
+      }},
+      tooltip: { enabled: false },
+      datalabels: donutDatalabel
+    }
+  }
+});
+
+// 4. Followers Donut
+new Chart(document.getElementById('followersDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Bug Followers', 'Task Followers', 'Forum Follow', 'User Follow', 'Tasklist Follow', 'Milestone Follow'],
+    datasets: [{
+      data: [861858, 281683, 62392, 4032, 1828, 608],
+      backgroundColor: ['#f472b6','#34d399','#2dd4bf','#fb923c','#a78bfa','#38bdf8'],
+      borderWidth: 2, borderColor: '#1e293b', hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: {
+      legend: { position: 'right', labels: { padding: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 },
+        generateLabels: chart => chart.data.labels.map((l, i) => {
+          const v = chart.data.datasets[0].data[i];
+          const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+          return { text: l + '  ' + fmt(v) + '  (' + (v/total*100).toFixed(1) + '%)', fillStyle: chart.data.datasets[0].backgroundColor[i], fontColor: '#e2e8f0', strokeStyle: 'transparent', pointStyle: 'circle', hidden: false, index: i };
+        })
+      }},
+      tooltip: { enabled: false },
+      datalabels: donutDatalabel
+    }
+  }
+});
+
+// 5. Custom Fields
+new Chart(document.getElementById('customFieldsChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Task', 'Project', 'Milestone', 'Bug', 'Time'],
+    datasets: [{
+      label: 'Custom Fields',
+      data: [93155, 61931, 42133, 24735, 16738],
+      backgroundColor: ['#34d399','#38bdf8','#a78bfa','#f472b6','#fb923c'],
+      borderRadius: 6, borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 25 } },
+    plugins: { legend: { display: false }, tooltip: { enabled: false }, datalabels: barDatalabelEndVertical },
+    scales: { y: { ticks: { callback: v => v >= 1e3 ? (v/1e3)+'K' : v }, grid: { color: 'rgba(51,65,85,0.3)' } }, x: { grid: { display: false } } }
+  }
+});
+
+// 6. Layouts & Statuses
+new Chart(document.getElementById('layoutStatusChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Project', 'Milestone', 'Task', 'Bug', 'Time'],
+    datasets: [
+      { label: 'Layouts', data: [1664, 2348, 7215, 26168, 3448], backgroundColor: '#38bdf8', borderRadius: 6, borderSkipped: false },
+      { label: 'Statuses', data: [10619, 7694, 17689, 10079, 0], backgroundColor: '#a78bfa', borderRadius: 6, borderSkipped: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 25 } },
+    plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } }, tooltip: { enabled: false }, datalabels: groupedBarDatalabel },
+    scales: { y: { ticks: { callback: v => v >= 1e3 ? (v/1e3)+'K' : v }, grid: { color: 'rgba(51,65,85,0.3)' } }, x: { grid: { display: false } } }
+  }
+});
+
+// 7. Automation
+new Chart(document.getElementById('automationChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Workflows', 'Email Templates', 'Email Alerts', 'WebHooks', 'Custom Functions', 'Blueprints', 'Business Rules', 'SLAs'],
+    datasets: [
+      { label: 'Project', data: [2255, 99, 135, 42, 677, 0, 0, 0], backgroundColor: '#38bdf8', borderRadius: 4, borderSkipped: false },
+      { label: 'Task', data: [4175, 658, 1783, 432, 1863, 1547, 0, 0], backgroundColor: '#34d399', borderRadius: 4, borderSkipped: false },
+      { label: 'Bug', data: [0, 727, 0, 1487, 830, 0, 5731, 987], backgroundColor: '#f472b6', borderRadius: 4, borderSkipped: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 25 } },
+    plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } }, tooltip: { enabled: false }, datalabels: groupedBarDatalabel },
+    scales: { y: { ticks: { callback: v => v >= 1e3 ? (v/1e3)+'K' : v }, grid: { color: 'rgba(51,65,85,0.3)' } }, x: { grid: { display: false } } }
+  }
+});
+
+// 8. Forums Donut
+new Chart(document.getElementById('forumsDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Forum Categories', 'Forums', 'Forum Comments', 'Forum Follows', 'Status Posts', 'Status Comments'],
+    datasets: [{
+      data: [86938, 36343, 63692, 62392, 119923, 190340],
+      backgroundColor: ['#38bdf8','#a78bfa','#34d399','#2dd4bf','#fb923c','#f472b6'],
+      borderWidth: 2, borderColor: '#1e293b', hoverOffset: 10
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: {
+      legend: { position: 'right', labels: { padding: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 },
+        generateLabels: chart => chart.data.labels.map((l, i) => {
+          const v = chart.data.datasets[0].data[i];
+          const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+          return { text: l + '  ' + fmt(v) + '  (' + (v/total*100).toFixed(1) + '%)', fillStyle: chart.data.datasets[0].backgroundColor[i], fontColor: '#e2e8f0', strokeStyle: 'transparent', pointStyle: 'circle', hidden: false, index: i };
+        })
+      }},
+      tooltip: { enabled: false },
+      datalabels: donutDatalabel
+    }
+  }
+});
+
+// Populate table
+const categories = {
+  'Users & Profiles': [['Profile',25172],['Role',5823],['PortalUser',52392],['UserDetails',163507],['ClientCompany',12491],['ClientUser',1136],['UserFollow',4032],['UserTeam',2907]],
+  'Projects': [['Project',67649],['ProjectGroup',3241],['ProjectComment',10247],['ProjCustomview',11076]],
+  'Milestones': [['Milestones',156829],['MilestoneComments',59580],['MilestoneFollow',608],['MileCustomview',10260]],
+  'Tasks': [['Task',3162598],['Tasklist',347246],['TaskComment',904836],['TasksDependency',248853],['TaskTemplate',3019],['TaskFollowers',281683],['TaskTimer',31503],['TaskBugMapping',12550],['TaskForumMapping',1310],['TaskCustomview',28734]],
+  'Bugs': [['Bug',7722459],['BugComment',3828552],['BugResolution',41748],['BugLink',48073],['BugFollowers',861858],['BugTimer',7982],['BugCustomview',59474]],
+  'Forums & Status': [['ForumCategory',86938],['Forum',36343],['ForumComment',63692],['ForumFollow',62392],['Status',119923],['StatusComment',190340]],
+  'Time & Logs': [['LogHours',256065],['TimeCustomview',14866]],
+  'Attachments': [['Attachments',1284935],['OrgAttachments',615314],['ProjAttachments',30604]],
+  'Tags': [['Tag',52574]]
+};
+
+const tbody = document.getElementById('dataTable');
+const catColors = {'Users & Profiles':'#38bdf8','Projects':'#a78bfa','Milestones':'#a78bfa','Tasks':'#34d399','Bugs':'#f472b6','Forums & Status':'#2dd4bf','Time & Logs':'#fb923c','Attachments':'#fbbf24','Tags':'#94a3b8'};
+for (const [cat, items] of Object.entries(categories)) {
+  items.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i===0 ? '<span class="badge" style="background:'+catColors[cat]+'22;color:'+catColors[cat]+'">'+cat+'</span>' : ''}</td><td>${item[0]}</td><td style="text-align:right;font-weight:600">${fmt(item[1])}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>
